@@ -8,14 +8,19 @@ import lombok.Getter;
 public enum EventType {
 	
 	/**
-	 * Получен запрос
+	 * Запрос на запись в локальный store
 	 */
-	REQUEST("request"),
+	WRITE_TO_STORE("write_to_store"),
 	
 	/**
-	 * Получен ответ
+	 * К сети подключилась новая нода
 	 */
-	RESPONSE("response");
+	NEW_CONNECTION("new_connection"),
+	
+	/**
+	 * Получено подтверждение записи в локальный store от другой ноды
+	 */
+	CONFIRMATION("confirmation");
 	
 	private String name;
 }

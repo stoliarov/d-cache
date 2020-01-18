@@ -1,4 +1,4 @@
-package ru.nsu.fit.d.cache.channel;
+package ru.nsu.fit.d.cache.store;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -7,9 +7,9 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class Response {
+public class StoreValue<T> {
 	
-	private boolean isOk;
+	private T value;
 	
-	private String text;
+	private long changeId;
 }

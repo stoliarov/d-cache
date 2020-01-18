@@ -10,7 +10,9 @@ public class Receiver {
 	
 	private EventQueue eventQueue;
 	
-	public Request receive() {
+	private int port;
+	
+	public Message receive() {
 		
 		// TODO: 18.01.20 Запускается в отдельном потоке, блокируется и ждет запросы.
 		//  Кладет полученное в очередь как event. Далее из этой очереди класс Node будет выгребать запросы и реагировать

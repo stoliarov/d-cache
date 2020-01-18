@@ -1,15 +1,26 @@
 package ru.nsu.fit.d.cache.event;
 
-import java.util.Queue;
-import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.TimeUnit;
 
-public class EventQueue {
+public class EventQueue<T> {
 	
-	private Queue<Event> queue;
+	private BlockingQueue<Event<T>> queue;
 	
 	public EventQueue() {
-		this.queue = new ConcurrentLinkedQueue<Event>();
+		this.queue = new LinkedBlockingQueue<Event<T>>();
 	}
 	
-	// TODO: 18.01.20 методы по работе с очередью
+	public boolean add(Event<T> event) {
+		return queue.add(event);
+	}
+	
+	public Event<T> poll(long timeout, TimeUnit timeUnit) throws InterruptedException {
+		return queue.poll(timeout, timeUnit);
+	}
+	
+	public boolean isEmpty() {
+		return queue.isEmpty();
+	}
 }
