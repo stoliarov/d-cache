@@ -40,13 +40,13 @@ public class Node<T> {
 	
 	private String multicastUrl;
 	
-	public Node(int port, String writerUrl, String multicastUrl) {
+	public Node(int port, String writerUrl, String receiverMulticastUrl, String multicastUrl) {
 		
 		EventQueue<T> eventQueue = new EventQueue<T>();
 		
 		this.eventQueue = eventQueue;
 		this.sender = new Sender();
-		this.receiver = new Receiver(eventQueue, port);
+		this.receiver = new Receiver(port, receiverMulticastUrl, eventQueue);
 		this.store = new HashMap<String, StoreValue<T>>();
 		this.writerUrl = writerUrl;
 		this.srcUrl = "localhost:" + port;
