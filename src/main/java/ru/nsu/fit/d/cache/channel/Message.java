@@ -3,6 +3,7 @@ package ru.nsu.fit.d.cache.channel;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.apache.commons.lang3.Validate;
 
 @Data
 @NoArgsConstructor
@@ -10,7 +11,7 @@ import lombok.NoArgsConstructor;
 public class Message<T> {
 	
 	private MessageType messageType;
-	
+
 	private String key;
 	
 	private T value;
@@ -22,9 +23,15 @@ public class Message<T> {
 	private boolean isLowPriorityValue;
 	
 	private String destinationUrl;
-	
+
+	private int destinationPort;
+
 	private String srcUrl;
-	
+
+	private int srcPort;
+
+	private boolean isMulticast;
+
 	/**
 	 * Другие ноды при отправке подтверждения указывают какой запрос они подтвердили
 	 */
@@ -37,5 +44,13 @@ public class Message<T> {
 	public void send(long time) {
 		setSendingTime(time);
 		setSent(true);
+	}
+
+	public Message(String key, T value) {
+		Validate.notNull(key, "type cannot be null");
+		Validate.notNull(value, "data cannot be null");
+
+		this.key = key;
+		this.value = value;
 	}
 }

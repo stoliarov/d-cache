@@ -9,6 +9,7 @@ import java.util.Scanner;
 
 public class ConsoleReader implements Runnable {
     private final int MAX_MESSAGE_SYMBOLS = 32000;
+
     private EventQueue eventQueue;
 
     public ConsoleReader(EventQueue eventQueue) {

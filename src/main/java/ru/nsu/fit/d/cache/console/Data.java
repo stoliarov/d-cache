@@ -4,6 +4,7 @@ import org.apache.commons.lang3.Validate;
 
 public class Data {
     private String key;
+
     private String value;
 
     public Data(String key, String value) {

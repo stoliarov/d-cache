@@ -6,11 +6,13 @@ import ru.nsu.fit.d.cache.channel.Message;
 import ru.nsu.fit.d.cache.channel.MessageType;
 import ru.nsu.fit.d.cache.channel.Receiver;
 import ru.nsu.fit.d.cache.channel.Sender;
+import ru.nsu.fit.d.cache.console.Data;
 import ru.nsu.fit.d.cache.queue.event.Event;
 import ru.nsu.fit.d.cache.queue.event.EventQueue;
 import ru.nsu.fit.d.cache.queue.event.EventType;
 import ru.nsu.fit.d.cache.queue.message.MessagesToSendQueue;
 
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Timer;
@@ -51,14 +53,14 @@ public class Node<T> {
 	
 	private String multicastUrl;
 	
-	public Node(int port, String writerUrl, String multicastUrl) {
+	public Node(int port, int multicastPort, String writerUrl, String multicastUrl) throws IOException {
 		
 		EventQueue<T> eventQueue = new EventQueue<>();
 		MessagesToSendQueue<T> messagesToSendQueue = new MessagesToSendQueue<>();
 		
 		this.eventQueue = eventQueue;
 		this.messagesToSendQueue = messagesToSendQueue;
-		this.sender = new Sender<>(messagesToSendQueue);
+		this.sender = new Sender<T>(messagesToSendQueue, multicastUrl, multicastPort);
 		this.receiver = new Receiver(eventQueue, port);
 		this.store = new HashMap<>();
 		this.knownNodes = new ConcurrentHashMap<>();
