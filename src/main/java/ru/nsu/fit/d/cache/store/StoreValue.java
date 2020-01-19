@@ -7,9 +7,9 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class StoreValue<T> {
+public class StoreValue {
 	
-	private T value;
+	private String serializedValue;
 	
 	private long changeId;
 }

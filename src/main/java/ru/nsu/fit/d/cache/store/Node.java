@@ -52,7 +52,7 @@ public class Node<T> {
 
 	private Address multicastAddress;
 
-	public Node(int port, String writerHost, int writerPort, String multicastHost, int multicastPort)
+	public Node(int port, String writerHost, int writerPort, String multicastHost, int multicastPort, boolean isWriter)
 			throws IOException {
 
 		EventQueue eventQueue = new EventQueue();
@@ -60,7 +60,7 @@ public class Node<T> {
 
 		this.eventQueue = eventQueue;
 		this.messagesToSendQueue = messagesToSendQueue;
-		this.sender = new Sender(messagesToSendQueue, multicastHost, multicastPort);
+		this.sender = new Sender(messagesToSendQueue);
 		this.receiver = new Receiver(eventQueue, port);
 		this.store = new HashMap<>();
 		this.knownNodes = new ConcurrentHashMap<>();
@@ -68,6 +68,11 @@ public class Node<T> {
 		this.srcAddress = new Address("localhost", port);
 		this.multicastAddress = new Address(multicastHost, multicastPort);
 		this.writerAddress = new Address(writerHost, writerPort);
+		this.isWriter = isWriter;
+
+		if (isWriter) {
+			sender.initMulticast(multicastHost, multicastPort);
+		}
 	}
 
 	public void run() {
@@ -121,7 +126,7 @@ public class Node<T> {
 		String value = event.getSerializedValue();
 		long changeId = getNewChangeId();
 
-		StoreValue<T> storeValue = new StoreValue(value, changeId);
+		StoreValue storeValue = new StoreValue(value, changeId);
 
 		store.put(key, storeValue);
 

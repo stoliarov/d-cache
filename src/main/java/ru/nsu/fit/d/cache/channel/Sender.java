@@ -1,9 +1,5 @@
 package ru.nsu.fit.d.cache.channel;
 
-import org.zeromq.SocketType;
-import org.zeromq.ZContext;
-import org.zeromq.ZMQ.Socket;
-import org.zeromq.ZMsg;
 import ru.nsu.fit.d.cache.tools.Serializer;
 import ru.nsu.fit.d.cache.queue.message.MessagesToSendQueue;
 
@@ -23,29 +19,34 @@ public class Sender implements Runnable {
 
 	private InetAddress multicastAddress;
 
-	public Sender(MessagesToSendQueue messagesToSendQueue, String multicastAddress, int multicastPort) throws IOException {
+	public Sender(MessagesToSendQueue messagesToSendQueue) throws IOException {
 		this.messagesToSendQueue = messagesToSendQueue;
-		this.multicastAddress = InetAddress.getByName(multicastAddress);
-		this.multicastPort = multicastPort;
-		this.multicastSocket = new MulticastSocket(multicastPort);
-		this.multicastSocket.joinGroup(this.multicastAddress);
 
 		int port = (int) (Math.random() * (64000 - 5000)) + 5000;
 		this.socket = new DatagramSocket(port);
+	}
+
+	public void initMulticast(String multicastHost, int multicastPort) throws IOException {
+		this.multicastAddress = InetAddress.getByName(multicastHost);
+		this.multicastPort = multicastPort;
+		this.multicastSocket = new MulticastSocket(multicastPort);
+		this.multicastSocket.joinGroup(this.multicastAddress);
 	}
 
 	@Override
 	public void run() {
 		int port = (int) (Math.random() * (64000 - 5000)) + 5000;
 
-		try  {
-			send(messagesToSendQueue.take());
+		while(true) {
+			try {
+				send(messagesToSendQueue.take());
 
-		} catch (Exception e) {
-			socket.close();
-			multicastSocket.close();
+			} catch (Exception e) {
+				socket.close();
+				multicastSocket.close();
 
-			throw new RuntimeException(e);
+				throw new RuntimeException(e);
+			}
 		}
 	}
 
