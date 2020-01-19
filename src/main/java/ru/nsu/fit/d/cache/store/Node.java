@@ -1,12 +1,10 @@
 package ru.nsu.fit.d.cache.store;
 
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
 import ru.nsu.fit.d.cache.channel.Message;
 import ru.nsu.fit.d.cache.channel.MessageType;
 import ru.nsu.fit.d.cache.channel.Receiver;
 import ru.nsu.fit.d.cache.channel.Sender;
-import ru.nsu.fit.d.cache.console.Data;
 import ru.nsu.fit.d.cache.queue.event.Event;
 import ru.nsu.fit.d.cache.queue.event.EventQueue;
 import ru.nsu.fit.d.cache.queue.event.EventType;
@@ -37,37 +35,38 @@ public class Node<T> {
 	
 	private Map<String, StoreValue<T>> store;
 	
-	private Map<String, String> knownNodes;
+	private Map<Address, String> knownNodes;
 	
-	private Map<String, Message<T>> expectedConfirmation;
+	private Map<Address, Message<T>> expectedConfirmation;
 	
 	private Timer confirmationTimer;
 	
 	private boolean isWriter;
 	
-	private String writerUrl;
-	
 	private long currentChangeId;
 	
-	private String srcUrl;
+	private Address writerAddress;
 	
-	private String multicastUrl;
+	private Address srcAddress;
 	
-	public Node(int port, int multicastPort, String writerUrl, String multicastUrl) throws IOException {
+	private Address multicastAddress;
+	
+	public Node(int port, String writerHost, int writerPort, String multicastHost, int multicastPort)
+			throws IOException {
 		
 		EventQueue<T> eventQueue = new EventQueue<>();
 		MessagesToSendQueue<T> messagesToSendQueue = new MessagesToSendQueue<>();
 		
 		this.eventQueue = eventQueue;
 		this.messagesToSendQueue = messagesToSendQueue;
-		this.sender = new Sender<T>(messagesToSendQueue, multicastUrl, multicastPort);
+		this.sender = new Sender<>(messagesToSendQueue, multicastHost, multicastPort);
 		this.receiver = new Receiver(eventQueue, port);
 		this.store = new HashMap<>();
 		this.knownNodes = new ConcurrentHashMap<>();
 		this.expectedConfirmation = new ConcurrentHashMap<>();
-		this.writerUrl = writerUrl;
-		this.srcUrl = "localhost:" + port;
-		this.multicastUrl = multicastUrl;
+		this.srcAddress = new Address("localhost", port);
+		this.multicastAddress = new Address(multicastHost, multicastPort);
+		this.writerAddress = new Address(writerHost, writerPort);
 	}
 	
 	public void run() {
@@ -139,10 +138,10 @@ public class Node<T> {
 			return;
 		}
 		
-		Message<T> message = buildSubscribeMessage();
-		message.setDestinationUrl(event.getFromUrl());
+		Message<T> message = buildSubscribeMessage(event.getFromHost(), event.getFromPort());
 		
 		messagesToSendQueue.offer(message);
+		expectForConfirmation(message);
 	}
 	
 	private void handleConfirmation(Event<T> event) {
@@ -153,20 +152,28 @@ public class Node<T> {
 	
 	private void initBroadcast(String key, T value, long changeId) {
 		
-		// TODO: 18.01.20
+		Message<T> message = buildPutMessage(key, value, changeId, true, multicastAddress);
+		
+		messagesToSendQueue.offer(message);
+		
+		knownNodes.forEach(((address, s) -> {
+			
+			Address destinationAddress = new Address(address.getHost(), address.getPort());
+			expectedConfirmation.put(destinationAddress, message);
+		}));
 	}
 	
 	private void sendToWriter(String key, T value, long changeId) {
 		
-		Message<T> message = buildPutMessage(key, value, changeId);
-		message.setDestinationUrl(writerUrl);
+		Message<T> message = buildPutMessage(key, value, changeId, false, writerAddress);
+		
 		messagesToSendQueue.offer(message);
+		expectForConfirmation(message);
 	}
 	
 	private void startConfirmationTimeoutChecking() {
 		
 		confirmationTimer = new Timer();
-		
 		confirmationTimer.schedule(new ConfirmationControl(), CHECK_CONFIRMATION_TIMEOUT, CHECK_CONFIRMATION_TIMEOUT);
 	}
 	
@@ -177,18 +184,28 @@ public class Node<T> {
 		}
 	}
 	
-	private Message<T> buildSubscribeMessage() {
+	private void expectForConfirmation(Message<T> message) {
+		
+		Address destinationAddress = new Address(message.getDestinationHost(), message.getDestinationPort());
+		expectedConfirmation.put(destinationAddress, message);
+	}
+	
+	private Message<T> buildSubscribeMessage(String destinationHost, int destinationPort) {
 		
 		Message<T> message = new Message<>();
 		
 		message.setMessageType(MessageType.SUBSCRIBE);
-		message.setFreeText(multicastUrl);
-		message.setSrcUrl(srcUrl);
+		message.setFreeText(multicastAddress.getHost() + ":" + multicastAddress.getPort());
+		message.setSrcHost(srcAddress.getHost());
+		message.setSrcPort(srcAddress.getPort());
+		message.setDestinationHost(destinationHost);
+		message.setDestinationPort(destinationPort);
 		
 		return message;
 	}
 	
-	private Message<T> buildPutMessage(String key, T value, long changeId) {
+	private Message<T> buildPutMessage(String key, T value, long changeId, boolean isMulticast,
+	                                   Address destinationAddress) {
 		
 		Message<T> message = new Message<>();
 		
@@ -196,7 +213,11 @@ public class Node<T> {
 		message.setKey(key);
 		message.setValue(value);
 		message.setChangeId(changeId);
-		message.setSrcUrl(srcUrl);
+		message.setSrcHost(srcAddress.getHost());
+		message.setSrcPort(srcAddress.getPort());
+		message.setMulticast(isMulticast);
+		message.setDestinationHost(destinationAddress.getHost());
+		message.setDestinationPort(destinationAddress.getPort());
 		
 		return message;
 	}
@@ -221,13 +242,27 @@ public class Node<T> {
 					return;
 				}
 				
+				// TODO: 19.01.20 обработать, если не достучались до Writer
+				
 				if (System.currentTimeMillis() - message.getSendingTime() > CONFIRMATION_TIMEOUT * 3) {
-					knownNodes.remove(message.getSrcUrl());
+					
+					Address key = new Address(message.getDestinationHost(), message.getDestinationPort());
+					knownNodes.remove(key);
 					
 				} else if (System.currentTimeMillis() - message.getSendingTime() > CONFIRMATION_TIMEOUT) {
 					messagesToSendQueue.offer(message);
 				}
 			});
 		}
+	}
+	
+	@Data
+	@NoArgsConstructor
+	@AllArgsConstructor
+	private static class Address {
+		
+		private String host;
+		
+		private int port;
 	}
 }

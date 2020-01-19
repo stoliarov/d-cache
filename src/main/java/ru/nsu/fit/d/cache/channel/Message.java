@@ -22,11 +22,11 @@ public class Message<T> {
 	
 	private boolean isLowPriorityValue;
 	
-	private String destinationUrl;
+	private String destinationHost;
 
 	private int destinationPort;
 
-	private String srcUrl;
+	private String srcHost;
 
 	private int srcPort;
 

@@ -59,6 +59,7 @@ public class Sender<T> implements Runnable {
 
 			try {
 				multicastSocket.send(packet);
+				message.send(System.currentTimeMillis());
 
 			} catch (IOException e) {
 				System.out.println("Error occured while sending multicast");
@@ -66,10 +67,11 @@ public class Sender<T> implements Runnable {
 		}
 		else {
 
-			InetAddress destinationAddress = InetAddress.getByName(message.getDestinationUrl());
+			InetAddress destinationAddress = InetAddress.getByName(message.getDestinationHost());
 			DatagramPacket packet = new DatagramPacket(bytes, bytes.length, destinationAddress, message.getDestinationPort());
 
 			socket.send(packet);
+			message.send(System.currentTimeMillis());
 		}
 
 	}
@@ -77,21 +79,5 @@ public class Sender<T> implements Runnable {
 	private byte[] getBytes(Message<T> message) {
 		String jsonString = Serializer.getJsonString(message);
 		return jsonString.getBytes(StandardCharsets.UTF_8);
-	}
-
-	private void send(String url, Message request) {
-
-		ZContext context = new ZContext();
-
-		Socket client = context.createSocket(SocketType.REQ);
-
-		client.connect(url);
-
-		ZMsg message = new ZMsg();
-		message.append("some string");
-
-		message.send(client);
-
-		context.destroySocket(client);
 	}
 }

@@ -6,7 +6,7 @@ public class Main1 {
 	
 	public static void main(String[] args) {
 		
-		Node node = new Node(1234, "localhost:1111", "localhost:2222");
-		node.run();
+//		Node node = new Node(1234, "localhost:1111", "localhost:2222");
+//		node.run();
 	}
 }

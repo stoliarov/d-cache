@@ -20,7 +20,9 @@ public class Event<T> {
 	
 	private boolean isLowPriorityValue;
 	
-	private String fromUrl;
+	private String fromHost;
+	
+	private int fromPort;
 	
 	private RequestContext requestContext;
 }
