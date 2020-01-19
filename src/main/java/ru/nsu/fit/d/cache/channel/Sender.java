@@ -11,9 +11,9 @@ import java.io.IOException;
 import java.net.*;
 import java.nio.charset.StandardCharsets;
 
-public class Sender<T> implements Runnable {
+public class Sender implements Runnable {
 
-	private MessagesToSendQueue<T> messagesToSendQueue;
+	private MessagesToSendQueue messagesToSendQueue;
 
 	private MulticastSocket multicastSocket;
 
@@ -23,7 +23,7 @@ public class Sender<T> implements Runnable {
 
 	private InetAddress multicastAddress;
 
-	public Sender(MessagesToSendQueue<T> messagesToSendQueue, String multicastAddress, int multicastPort) throws IOException {
+	public Sender(MessagesToSendQueue messagesToSendQueue, String multicastAddress, int multicastPort) throws IOException {
 		this.messagesToSendQueue = messagesToSendQueue;
 		this.multicastAddress = InetAddress.getByName(multicastAddress);
 		this.multicastPort = multicastPort;
@@ -49,7 +49,7 @@ public class Sender<T> implements Runnable {
 		}
 	}
 
-	private void send(Message<T> message) throws IOException {
+	private void send(Message message) throws IOException {
 
 		byte[] bytes = getBytes(message);
 
@@ -76,7 +76,7 @@ public class Sender<T> implements Runnable {
 
 	}
 
-	private byte[] getBytes(Message<T> message) {
+	private byte[] getBytes(Message message) {
 		String jsonString = Serializer.getJsonString(message);
 		return jsonString.getBytes(StandardCharsets.UTF_8);
 	}

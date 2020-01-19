@@ -8,13 +8,13 @@ import ru.nsu.fit.d.cache.channel.RequestContext;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class Event<T> {
+public class Event {
 	
 	private EventType eventType;
 	
 	private String key;
 	
-	private T value;
+	private String serializedValue;
 	
 	private long changeId;
 	

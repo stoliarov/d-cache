@@ -5,19 +5,19 @@ import ru.nsu.fit.d.cache.channel.Message;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
-public class MessagesToSendQueue<T> {
+public class MessagesToSendQueue {
 	
-	private BlockingQueue<Message<T>> queue;
+	private BlockingQueue<Message> queue;
 	
 	public MessagesToSendQueue() {
 		this.queue = new LinkedBlockingQueue<>();
 	}
 	
-	public boolean offer(Message<T> message) {
+	public boolean offer(Message message) {
 		return queue.offer(message);
 	}
 	
-	public Message<T> take() throws InterruptedException {
+	public Message take() throws InterruptedException {
 		return queue.take();
 	}
 	

@@ -8,13 +8,13 @@ import org.apache.commons.lang3.Validate;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class Message<T> {
+public class Message {
 	
 	private MessageType messageType;
 
 	private String key;
 	
-	private T value;
+	private String serializedValue;
 	
 	private Long changeId;
 	
@@ -46,11 +46,11 @@ public class Message<T> {
 		setSent(true);
 	}
 
-	public Message(String key, T value) {
+	public Message(String key, String serializedValue) {
 		Validate.notNull(key, "type cannot be null");
-		Validate.notNull(value, "data cannot be null");
+		Validate.notNull(serializedValue, "data cannot be null");
 
 		this.key = key;
-		this.value = value;
+		this.serializedValue = serializedValue;
 	}
 }
