@@ -15,7 +15,12 @@ public enum EventType {
 	/**
 	 * Получен ответ
 	 */
-	RESPONSE("response");
-	
+	RESPONSE("response"),
+
+	/**
+	 * Получены данные с консоли
+	 */
+	CONSOLE("console");
+
 	private String name;
 }

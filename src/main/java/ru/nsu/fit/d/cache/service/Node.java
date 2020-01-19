@@ -4,6 +4,7 @@ import lombok.Getter;
 import lombok.Setter;
 import ru.nsu.fit.d.cache.channel.Receiver;
 import ru.nsu.fit.d.cache.channel.Sender;
+import ru.nsu.fit.d.cache.console.ConsoleReader;
 import ru.nsu.fit.d.cache.event.EventQueue;
 
 import java.util.HashMap;
@@ -14,23 +15,26 @@ import java.util.Map;
 public class Node {
 	
 	private boolean isWriter;
-	
+
 	private Sender sender;
-	
+
 	private Receiver receiver;
-	
+
 	private EventQueue eventQueue;
-	
+
 	private Map<String, Integer> store;
+
+	private ConsoleReader consoleReader;
 	
 	public Node() {
 		
 		EventQueue eventQueue = new EventQueue();
 		
 		this.eventQueue = eventQueue;
-		this.sender = new Sender();
+//		this.sender = new Sender();
 		this.receiver = new Receiver(eventQueue);
 		this.store = new HashMap<String, Integer>();
+		this.consoleReader = new ConsoleReader(eventQueue);
 	}
 	
 	public void run() {

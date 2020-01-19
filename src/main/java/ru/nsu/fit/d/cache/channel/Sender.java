@@ -1,6 +1,6 @@
 package ru.nsu.fit.d.cache.channel;
 
-import com.sun.istack.internal.Nullable;
+import jdk.internal.jline.internal.Nullable;
 import lombok.AllArgsConstructor;
 import org.zeromq.SocketType;
 import org.zeromq.ZContext;
@@ -9,6 +9,7 @@ import org.zeromq.ZMQ.Poller;
 import org.zeromq.ZMQ.Socket;
 import org.zeromq.ZMsg;
 
+import java.net.DatagramSocket;
 import java.nio.charset.Charset;
 
 @AllArgsConstructor
@@ -17,6 +18,10 @@ public class Sender {
 	private static final int TIMEOUT = 1000;
 	
 	private static final Charset CHARSET = Charset.defaultCharset();
+
+	private String writerAddress;
+
+	private DatagramSocket socket;
 	
 	@Nullable
 	public Response send(ZContext context, String url, Request request) {
