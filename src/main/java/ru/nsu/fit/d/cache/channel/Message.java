@@ -6,7 +6,6 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Data
-@Builder
 @NoArgsConstructor
 @AllArgsConstructor
 public class Message<T> {
@@ -23,10 +22,21 @@ public class Message<T> {
 	
 	private boolean isLowPriorityValue;
 	
+	private String destinationUrl;
+	
 	private String srcUrl;
 	
 	/**
 	 * Другие ноды при отправке подтверждения указывают какой запрос они подтвердили
 	 */
-	private Message responseContext;
+	private RequestContext requestContext;
+	
+	private long sendingTime;
+	
+	private boolean isSent = false;
+	
+	public void send(long time) {
+		setSendingTime(time);
+		setSent(true);
+	}
 }

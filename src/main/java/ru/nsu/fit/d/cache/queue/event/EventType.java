@@ -1,4 +1,4 @@
-package ru.nsu.fit.d.cache.event;
+package ru.nsu.fit.d.cache.queue.event;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;

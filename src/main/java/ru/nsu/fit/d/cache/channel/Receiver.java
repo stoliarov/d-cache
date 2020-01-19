@@ -1,7 +1,7 @@
 package ru.nsu.fit.d.cache.channel;
 
 import lombok.AllArgsConstructor;
-import ru.nsu.fit.d.cache.event.EventQueue;
+import ru.nsu.fit.d.cache.queue.event.EventQueue;
 
 @AllArgsConstructor
 public class Receiver {
