@@ -1,9 +1,8 @@
 package ru.nsu.fit.d.cache.console;
 
 
-import ru.nsu.fit.d.cache.event.Event;
-import ru.nsu.fit.d.cache.event.EventQueue;
-import ru.nsu.fit.d.cache.event.EventType;
+import ru.nsu.fit.d.cache.queue.event.Event;
+import ru.nsu.fit.d.cache.queue.event.EventType;
 
 import java.util.Scanner;
 
@@ -29,9 +28,10 @@ public class ConsoleReader implements Runnable {
             value = trimStringIfNeeded(value);
 
             Data consoleInput = new Data(key, value);
-            Event event = new Event(EventType.CONSOLE);
-
-            event.setConsoleInput(consoleInput);
+            Event event = new Event();
+            event.setEventType(EventType.WRITE_TO_STORE);
+            event.setKey(key);
+            event.setValue(value);
             eventQueue.add(event);
         }
     }
