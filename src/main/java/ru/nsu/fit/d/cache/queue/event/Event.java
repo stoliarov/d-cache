@@ -3,7 +3,7 @@ package ru.nsu.fit.d.cache.queue.event;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import ru.nsu.fit.d.cache.channel.Message;
+import ru.nsu.fit.d.cache.channel.RequestContext;
 
 @Data
 @NoArgsConstructor
@@ -22,5 +22,5 @@ public class Event<T> {
 	
 	private String fromUrl;
 	
-	private Message responseContext;
+	private RequestContext requestContext;
 }

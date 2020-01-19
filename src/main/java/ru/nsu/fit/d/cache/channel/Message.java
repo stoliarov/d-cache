@@ -1,7 +1,6 @@
 package ru.nsu.fit.d.cache.channel;
 
 import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 

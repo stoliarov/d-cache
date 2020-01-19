@@ -11,7 +11,6 @@ import ru.nsu.fit.d.cache.queue.event.EventQueue;
 import ru.nsu.fit.d.cache.queue.event.EventType;
 import ru.nsu.fit.d.cache.queue.message.MessagesToSendQueue;
 
-
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Timer;
