@@ -25,7 +25,7 @@ public class Receiver {
 /**
  *	возвращает поток, который принимает от врайтера старые данные
  * */
-	public Thread getPearToPearListener () {
+	public Thread getPeerToPeerListener() {
 		return new Thread(() -> {
 			try {
 				//create socket
@@ -33,22 +33,7 @@ public class Receiver {
 				byte[] buf = new byte[4096];
 				DatagramPacket receivePacket = new DatagramPacket(buf, 0, buf.length);
 
-				while (!Thread.currentThread().isInterrupted()) {
-					//receiving
-					datagramSocket.setSoTimeout(WAIT_TIMEOUT);
-					try {
-						datagramSocket.receive(receivePacket);
-					} catch (SocketTimeoutException e) {
-						continue;
-					}
-					//parse data to message-object
-					byte[] data = receivePacket.getData();
-					String strMessage = Arrays.toString(data);
-					Message message = Serializer.deserializeMessage(strMessage);
-					//create new event
-					Event event = createEventByMessage(message, receivePacket);
-					eventQueue.add(event);
-				}
+				receiveMessage(datagramSocket, receivePacket);
 			} catch (UnknownHostException e) {
 			System.err.println("multicast url unknown");
 		} catch (IOException e) {
@@ -56,7 +41,27 @@ public class Receiver {
 		}
 		});
 	}
-/**
+
+	private void receiveMessage(DatagramSocket datagramSocket, DatagramPacket receivePacket) throws IOException {
+		while (!Thread.currentThread().isInterrupted()) {
+			//receiving
+			datagramSocket.setSoTimeout(WAIT_TIMEOUT);
+			try {
+				datagramSocket.receive(receivePacket);
+			} catch (SocketTimeoutException e) {
+				continue;
+			}
+			//parse data to message-object
+			byte[] data = receivePacket.getData();
+			String strMessage = Arrays.toString(data);
+			Message message = Serializer.deserializeMessage(strMessage);
+			//create new event
+			Event event = createEventByMessage(message, receivePacket);
+			eventQueue.add(event);
+		}
+	}
+
+	/**
  * возвращает поток, который слушает мультикаст
  * */
 	public Thread getMulticastListener(String url, int port) {
@@ -69,22 +74,7 @@ public class Receiver {
 				byte[] buf = new byte[4096];
 				DatagramPacket receivePacket = new DatagramPacket(buf, buf.length);
 
-				while(!Thread.currentThread().isInterrupted()) {
-					//receiving
-					receiveMulticsSocket.setSoTimeout(WAIT_TIMEOUT);
-					try {
-						receiveMulticsSocket.receive(receivePacket);
-					} catch (SocketTimeoutException e) {
-						continue;
-					}
-					//parse data to message-object
-					byte[] data = receivePacket.getData();
-					String strMessage = Arrays.toString(data);
-					Message message = Serializer.deserializeMessage(strMessage);
-					//create new event
-					Event event = createEventByMessage(message, receivePacket);
-					eventQueue.add(event);
-				}
+				receiveMessage(receiveMulticsSocket, receivePacket);
 			} catch (UnknownHostException e) {
 				System.err.println("multicast url unknown");
 			} catch (IOException e) {
@@ -96,24 +86,39 @@ public class Receiver {
 	private Event createEventByMessage(Message message, DatagramPacket packet) {
 		Event event = new Event();
 		event.setChangeId(message.getChangeId());
-		event.setFromHost(packet.getAddress().toString());
-		event.setFromPort(packet.getPort());
+
+		if (message.isMulticast()) {
+			event.setFromHost(message.getSrcHost());
+			event.setFromPort(message.getSrcPort());
+		}
+		else {
+			event.setFromHost(packet.getAddress().getHostName());
+			event.setFromPort(packet.getPort());
+		}
+
 		event.setKey(message.getKey());
 		event.setLowPriorityValue(message.isLowPriorityValue());
 		event.setRequestContext(message.getRequestContext());
 		event.setSerializedValue(message.getSerializedValue());
 
-		EventType eventType = null;
+		EventType eventType;
 
-		if(message.getMessageType() == MessageType.CONFIRMATION)
-			eventType = EventType.CONFIRMATION;
-		/*
-		TODO: 20.01.20 какие значения MessageType соответств значениям EventType?
-		* */
-		/*if(message.getMessageType() == MessageType.)
-			eventType = EventType.WRITE_TO_STORE;
-		if(message.getMessageType() == MessageType.CONFIRMATION)
-			eventType = EventType.NEW_CONNECTION;*/
+		switch (message.getMessageType()) {
+			case CONFIRMATION:
+				eventType = EventType.CONFIRMATION;
+				break;
+			case PUT:
+				eventType = EventType.WRITE_TO_STORE;
+				break;
+			case GET:
+				eventType = EventType.NEW_CONNECTION;
+				break;
+			case SUBSCRIBE:
+				eventType = EventType.GOT_MULTICAST;
+				break;
+			default:
+				eventType = EventType.UNKNOWN;
+		}
 
 		event.setEventType(eventType);
 

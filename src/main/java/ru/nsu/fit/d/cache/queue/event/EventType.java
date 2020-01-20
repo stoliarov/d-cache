@@ -6,7 +6,12 @@ import lombok.Getter;
 @Getter
 @AllArgsConstructor
 public enum EventType {
-	
+
+	/**
+	 * Неизвестный тип события
+	 */
+	UNKNOWN("unknown"),
+
 	/**
 	 * Запрос на запись в локальный store
 	 */
@@ -20,7 +25,12 @@ public enum EventType {
 	/**
 	 * Получено подтверждение записи в локальный store от другой ноды
 	 */
-	CONFIRMATION("confirmation");
+	CONFIRMATION("confirmation"),
+
+	/**
+	 * Получен адрес мультикаста
+	 */
+	GOT_MULTICAST("got_multicast");
 	
 	private String name;
 }
