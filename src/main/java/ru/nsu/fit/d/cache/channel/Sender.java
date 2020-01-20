@@ -9,6 +9,7 @@ import java.nio.charset.StandardCharsets;
 
 public class Sender implements Runnable {
 
+	private static final long WAIT_TIMEOUT = 300;
 	private MessagesToSendQueue messagesToSendQueue;
 
 	private MulticastSocket multicastSocket;
@@ -40,7 +41,7 @@ public class Sender implements Runnable {
 		while(true) {
 			try {
 				send(messagesToSendQueue.take());
-
+				Thread.sleep(WAIT_TIMEOUT);
 			} catch (Exception e) {
 				socket.close();
 				multicastSocket.close();

@@ -5,6 +5,7 @@ import ru.nsu.fit.d.cache.channel.Message;
 import ru.nsu.fit.d.cache.channel.MessageType;
 import ru.nsu.fit.d.cache.channel.Receiver;
 import ru.nsu.fit.d.cache.channel.Sender;
+import ru.nsu.fit.d.cache.console.ConsoleReader;
 import ru.nsu.fit.d.cache.queue.event.Event;
 import ru.nsu.fit.d.cache.queue.event.EventQueue;
 import ru.nsu.fit.d.cache.queue.event.EventType;
@@ -80,6 +81,13 @@ public class Node<T> {
 		if (isWriter()) {
 			startConfirmationTimeoutChecking();
 		}
+		//run threads
+		new Thread(sender).start();
+		receiver
+				.getMulticastListener(multicastAddress.getHost(), multicastAddress.getPort())
+				.start();
+		new Thread(new ConsoleReader(eventQueue))
+				.start();
 
 		while(true) {
 
@@ -92,8 +100,6 @@ public class Node<T> {
 				e.printStackTrace();
 			}
 		}
-
-		// TODO: 18.01.20 Запустить в отдельном потоке receiver, чтобы слушал входящие запросы
 	}
 
 	private void handleEvent(Event event) {
@@ -102,17 +108,19 @@ public class Node<T> {
 
 		// TODO: 18.01.20 фабрика
 
-		if (EventType.WRITE_TO_STORE == eventType) {
-
-			writeToStore(event);
-
-		} else if (EventType.NEW_CONNECTION == eventType) {
-
-			handleNewNodeConnection(event);
-
-		} else if (EventType.CONFIRMATION == eventType) {
-
-			handleConfirmation(event);
+		switch (eventType) {
+			case  WRITE_TO_STORE: {
+				writeToStore(event);
+				break;
+			}
+			case NEW_CONNECTION: {
+				handleNewNodeConnection(event);
+				break;
+			}
+			case CONFIRMATION: {
+				handleConfirmation(event);
+				break;
+			}
 		}
 	}
 

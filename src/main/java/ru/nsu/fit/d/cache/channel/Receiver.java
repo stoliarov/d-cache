@@ -53,7 +53,7 @@ public class Receiver {
 			}
 			//parse data to message-object
 			byte[] data = receivePacket.getData();
-			String strMessage = Arrays.toString(data);
+			String strMessage = new String(data);
 			Message message = Serializer.deserializeMessage(strMessage);
 			//create new event
 			Event event = createEventByMessage(message, receivePacket);
