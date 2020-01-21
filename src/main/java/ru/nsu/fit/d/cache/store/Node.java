@@ -114,7 +114,7 @@ public class Node<T> implements Runnable {
 
 		switch (eventType) {
 			case PUT: {
-				writeToStore(event);
+				handlePut(event);
 				break;
 			}
 			case NEW_CONNECTION: {
@@ -172,7 +172,7 @@ public class Node<T> implements Runnable {
 		sendConfirmation(event);
 	}
 
-	private void writeToStore(Event event) {
+	private void handlePut(Event event) {
 
 		if (isIrrelevantData(event)) {
 			return;
