@@ -8,23 +8,23 @@ import ru.nsu.fit.d.cache.tools.Serializer;
 
 import java.io.IOException;
 import java.net.*;
-import java.util.Arrays;
 
 @AllArgsConstructor
 public class Receiver {
-
+	
 	private static final int WAIT_TIMEOUT = 200;
-
+	
 	private EventQueue eventQueue;
-
+	
 	private int port;
-
+	
 	public Message receive() {
 		return null;
 	}
-/**
- *	возвращает поток, который принимает от врайтера старые данные
- * */
+	
+	/**
+	 * возвращает поток, который принимает от врайтера старые данные
+	 */
 	public Thread getPeerToPeerListener() {
 		return new Thread(() -> {
 			try {
@@ -32,18 +32,18 @@ public class Receiver {
 				DatagramSocket datagramSocket = new DatagramSocket(port);
 				byte[] buf = new byte[4096];
 				DatagramPacket receivePacket = new DatagramPacket(buf, 0, buf.length);
-
+				
 				receiveMessage(datagramSocket, receivePacket);
 			} catch (UnknownHostException e) {
-			System.err.println("multicast url unknown");
-		} catch (IOException e) {
-			System.err.println("impossible create multicast socket");
-		}
+				System.err.println("multicast url unknown");
+			} catch (IOException e) {
+				System.err.println("impossible create multicast socket");
+			}
 		});
 	}
-
+	
 	private void receiveMessage(DatagramSocket datagramSocket, DatagramPacket receivePacket) throws IOException {
-		while (!Thread.currentThread().isInterrupted()) {
+		while(!Thread.currentThread().isInterrupted()) {
 			//receiving
 			datagramSocket.setSoTimeout(WAIT_TIMEOUT);
 			try {
@@ -60,10 +60,10 @@ public class Receiver {
 			eventQueue.add(event);
 		}
 	}
-
+	
 	/**
- * возвращает поток, который слушает мультикаст
- * */
+	 * возвращает поток, который слушает мультикаст
+	 */
 	public Thread getMulticastListener(String url, int port) {
 		return new Thread(() -> {
 			try {
@@ -73,7 +73,7 @@ public class Receiver {
 				receiveMulticsSocket.joinGroup(group);
 				byte[] buf = new byte[4096];
 				DatagramPacket receivePacket = new DatagramPacket(buf, buf.length);
-
+				
 				receiveMessage(receiveMulticsSocket, receivePacket);
 			} catch (UnknownHostException e) {
 				System.err.println("multicast url unknown");
@@ -82,46 +82,27 @@ public class Receiver {
 			}
 		});
 	}
-
+	
 	private Event createEventByMessage(Message message, DatagramPacket packet) {
 		Event event = new Event();
 		event.setChangeId(message.getChangeId());
-
+		
 		if (message.isMulticast()) {
 			event.setFromHost(message.getSrcHost());
 			event.setFromPort(message.getSrcPort());
-		}
-		else {
+		} else {
 			event.setFromHost(packet.getAddress().getHostName());
 			event.setFromPort(packet.getPort());
 		}
-
+		
 		event.setKey(message.getKey());
 		event.setLowPriorityValue(message.isLowPriorityValue());
 		event.setRequestContext(message.getRequestContext());
 		event.setSerializedValue(message.getSerializedValue());
-
-		EventType eventType;
-
-		switch (message.getMessageType()) {
-			case CONFIRMATION:
-				eventType = EventType.CONFIRMATION;
-				break;
-			case PUT:
-				eventType = EventType.WRITE_TO_STORE;
-				break;
-			case GET:
-				eventType = EventType.NEW_CONNECTION;
-				break;
-			case SUBSCRIBE:
-				eventType = EventType.GOT_MULTICAST;
-				break;
-			default:
-				eventType = EventType.UNKNOWN;
-		}
-
-		event.setEventType(eventType);
-
+		event.setMulticastHost(message.getMulticastHost());
+		event.setMulticastPort(message.getMulticastPort());
+		event.setEventType(message.getEventType());
+		
 		return event;
 	}
 }

@@ -1,25 +1,20 @@
 package ru.nsu.fit.d.cache.store;
 
 import lombok.*;
-import ru.nsu.fit.d.cache.channel.Message;
-import ru.nsu.fit.d.cache.channel.MessageType;
-import ru.nsu.fit.d.cache.channel.Receiver;
-import ru.nsu.fit.d.cache.channel.Sender;
+import ru.nsu.fit.d.cache.channel.*;
 import ru.nsu.fit.d.cache.console.ConsoleReader;
 import ru.nsu.fit.d.cache.queue.event.Event;
 import ru.nsu.fit.d.cache.queue.event.EventQueue;
 import ru.nsu.fit.d.cache.queue.event.EventType;
 import ru.nsu.fit.d.cache.queue.message.MessagesToSendQueue;
-import ru.nsu.fit.d.cache.tools.Serializer;
 
 import java.io.IOException;
-import java.net.InetAddress;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 @Getter
 @Setter
-public class Node<T> {
+public class Node<T> implements Runnable {
 
 	private static final int CONFIRMATION_TIMEOUT = 2000;
 
@@ -38,6 +33,8 @@ public class Node<T> {
 	private Map<Address, String> knownNodes;
 
 	private Map<Address, Message> expectedConfirmation;
+	
+	private Map<Address, Iterator<Map.Entry<String, StoreValue>>> activeStoreIterators;
 
 	private Timer confirmationTimer;
 
@@ -50,7 +47,10 @@ public class Node<T> {
 	private Address srcAddress;
 
 	private Address multicastAddress;
-
+	
+	// reader проставляет в true после выгрузки стора врайтером
+	private boolean initCompleted;
+	
 	public Node(int port, String writerHost, int writerPort, String multicastHost, int multicastPort, boolean isWriter)
 			throws IOException {
 
@@ -64,6 +64,7 @@ public class Node<T> {
 		this.store = new HashMap<>();
 		this.knownNodes = new ConcurrentHashMap<>();
 		this.expectedConfirmation = new ConcurrentHashMap<>();
+		this.activeStoreIterators = new HashMap<>();
 		this.srcAddress = new Address("localhost", port);
 		this.multicastAddress = new Address(multicastHost, multicastPort);
 		this.writerAddress = new Address(writerHost, writerPort);
@@ -74,6 +75,7 @@ public class Node<T> {
 		}
 	}
 
+	@Override
 	public void run() {
 
 		if (isWriter()) {
@@ -111,7 +113,7 @@ public class Node<T> {
 		// TODO: 18.01.20 фабрика
 
 		switch (eventType) {
-			case  WRITE_TO_STORE: {
+			case PUT: {
 				writeToStore(event);
 				break;
 			}
@@ -123,19 +125,50 @@ public class Node<T> {
 				handleConfirmation(event);
 				break;
 			}
-			case GOT_MULTICAST: {
-				handleGotMulticast(event);
+			case SUBSCRIBE:
+				handleSubscribe(event);
 				break;
-			}
+			case STORE_SHARING:
+				handleStoreSharing(event);
+				break;
+			case END_OF_STORE:
+				handleEndOfStore(event);
+				break;
 		}
 	}
-
-	@SneakyThrows
-	private void handleGotMulticast(Event event) {
-		if (!isWriter) {
-			sender.initMulticast(event.getRequestContext().getMulticastHost(), event.getRequestContext().getMulticastPort());
+	
+	private void handleStoreSharing(Event event) {
+		
+		String key = event.getKey();
+		
+		if (!store.containsKey(key)) {
+			store.put(key, new StoreValue(event.getSerializedValue(), event.getChangeId()));
 		}
-
+		
+		sendConfirmation(event);
+	}
+	
+	private void handleEndOfStore(Event event) {
+		
+		this.initCompleted = true;
+		
+		sendConfirmation(event);
+	}
+	
+	private void handleSubscribe(Event event) {
+		
+		if (isWriter()) {
+			return;
+		}
+		
+		String multicastHost = event.getMulticastHost();
+		int multicastPort = event.getMulticastPort();
+		multicastAddress = new Address(multicastHost, multicastPort);
+		
+		receiver.getMulticastListener(multicastAddress.getHost(), multicastAddress.getPort())
+				.start();
+		sender.initMulticast(event.getRequestContext().getMulticastHost(), event.getRequestContext().getMulticastPort());
+		
 		sendConfirmation(event);
 	}
 
@@ -179,13 +212,87 @@ public class Node<T> {
 	}
 
 	private void handleConfirmation(Event event) {
-		if (isWriter && event.getRequestContext().getMessageType() == MessageType.SUBSCRIBE) {
-
+		
+		EventType contextEventType = Optional.of(event)
+				.map(Event::getRequestContext)
+				.map(RequestContext::getMessageType)
+				.orElse(null);
+		
+		Address srcAddress = new Address(event.getFromHost(), event.getFromPort());
+		
+		if (isWriter && contextEventType == EventType.SUBSCRIBE) {
+			
+			startStoreSharing(srcAddress);
+			sendNextValueFromStore(srcAddress);
+			
+		} else if (isWriter() && contextEventType == EventType.STORE_SHARING) {
+			
+			sendNextValueFromStore(srcAddress);
 		}
-		else {
-		}
+		
 		// TODO: 18.01.20 В зависимости от контекста.
 		//  Например, в случае подтверждения подписки начать обход стора и его отправку
+	}
+	
+	/**
+	 * Инициирует рассылку всех данных из стора.
+	 *
+	 * @param destinationAddress получатель рассылки
+	 */
+	private void startStoreSharing(Address destinationAddress) {
+		
+		Iterator<Map.Entry<String, StoreValue>> iterator = store.entrySet().iterator();
+		
+		Address otherNodeAddress = new Address(destinationAddress.getHost(), destinationAddress.getPort());
+		
+		activeStoreIterators.put(otherNodeAddress, iterator);
+	}
+	
+	/**
+	 * Использует writer.
+	 * Отправляет следующее сообщение для данного ридера в рамках рассылки стора при инициализации новой ноды
+	 *
+	 * @param destinationAddress адрес ридера, для которого производится рассылка
+	 */
+	private void sendNextValueFromStore(Address destinationAddress) {
+		
+		String receiverHost = destinationAddress.getHost();
+		int receiverPort = destinationAddress.getPort();
+		
+		Iterator<Map.Entry<String, StoreValue>> iterator = activeStoreIterators.get(destinationAddress);
+		
+		if (!iterator.hasNext()) {
+			activeStoreIterators.remove(destinationAddress);
+			
+			Message message = Message.builder()
+					.eventType(EventType.END_OF_STORE)
+					.srcHost(srcAddress.getHost())
+					.srcPort(srcAddress.getPort())
+					.destinationHost(receiverHost)
+					.destinationPort(receiverPort)
+					.build();
+			
+			messagesToSendQueue.offer(message);
+			expectForConfirmation(message);
+		}
+		
+		Map.Entry<String, StoreValue> storeEntry = iterator.next();
+		StoreValue storeValue = storeEntry.getValue();
+		
+		Message message = Message.builder()
+				.key(storeEntry.getKey())
+				.serializedValue(storeValue.getSerializedValue())
+				.changeId(storeValue.getChangeId())
+				.eventType(EventType.STORE_SHARING)
+				.isLowPriorityValue(true)
+				.srcHost(srcAddress.getHost())
+				.srcPort(srcAddress.getPort())
+				.destinationHost(receiverHost)
+				.destinationPort(receiverPort)
+				.build();
+		
+		messagesToSendQueue.offer(message);
+		expectForConfirmation(message);
 	}
 
 	private void sendConfirmation(Event event) {
@@ -195,17 +302,27 @@ public class Node<T> {
 	}
 
 	private Message buildConfirmationMessage(Event event) {
+		
 		Message confirmationMessage = new Message();
-
-		confirmationMessage.setMessageType(MessageType.CONFIRMATION);
+		
+		String key = event.getKey();
+		
+		Long changeId = key == null && store.containsKey(key) ? store.get(key).getChangeId() : event.getChangeId();
+		
+		RequestContext requestContext = new RequestContext();
+		// TODO: 22.01.20 set type
+		//		requestContext.setEventType(event.ge);
+		requestContext.setSrcHost(event.getFromHost());
+		requestContext.setSrcPort(event.getFromPort());
+		requestContext.setChangeId(changeId);
+		
+		confirmationMessage.setEventType(EventType.CONFIRMATION);
 		confirmationMessage.setDestinationHost(event.getFromHost());
 		confirmationMessage.setDestinationPort(event.getFromPort());
-		confirmationMessage.setSrcHost(srcAddress.host);
-		confirmationMessage.setSrcPort(srcAddress.port);
-
-		if (event.getKey() != null) {
-			confirmationMessage.setChangeId(store.get(event.getKey()).getChangeId());
-		}
+		confirmationMessage.setSrcHost(srcAddress.getHost());
+		confirmationMessage.setSrcPort(srcAddress.getPort());
+		confirmationMessage.setRequestContext(requestContext);
+		confirmationMessage.setChangeId(changeId);
 
 		return confirmationMessage;
 	}
@@ -254,7 +371,7 @@ public class Node<T> {
 
 		Message message = new Message();
 
-		message.setMessageType(MessageType.SUBSCRIBE);
+		message.setEventType(EventType.SUBSCRIBE);
 		message.setMulticastHost(multicastAddress.getHost());
 		message.setMulticastPort(multicastAddress.getPort());
 		message.setSrcHost(srcAddress.getHost());
@@ -270,7 +387,7 @@ public class Node<T> {
 
 		Message message = new Message();
 
-		message.setMessageType(MessageType.PUT);
+		message.setEventType(EventType.PUT);
 		message.setKey(key);
 		message.setSerializedValue(value);
 		message.setChangeId(changeId);
@@ -309,6 +426,7 @@ public class Node<T> {
 
 					Address key = new Address(message.getDestinationHost(), message.getDestinationPort());
 					knownNodes.remove(key);
+					activeStoreIterators.remove(key);
 
 				} else if (System.currentTimeMillis() - message.getSendingTime() > CONFIRMATION_TIMEOUT) {
 					messagesToSendQueue.offer(message);

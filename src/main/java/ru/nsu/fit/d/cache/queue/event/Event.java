@@ -16,13 +16,17 @@ public class Event {
 	
 	private String serializedValue;
 	
-	private long changeId;
+	private Long changeId;
 	
 	private boolean isLowPriorityValue;
 	
 	private String fromHost;
 	
 	private int fromPort;
+	
+	private String multicastHost;
+	
+	private int multicastPort;
 	
 	private RequestContext requestContext;
 }

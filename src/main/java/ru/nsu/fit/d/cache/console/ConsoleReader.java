@@ -28,9 +28,8 @@ public class ConsoleReader implements Runnable {
             String value = in.nextLine();
             value = trimStringIfNeeded(value);
 
-            Data consoleInput = new Data(key, value);
             Event event = new Event();
-            event.setEventType(EventType.WRITE_TO_STORE);
+            event.setEventType(EventType.PUT);
             event.setKey(key);
             event.setSerializedValue(value);
             eventQueue.add(event);

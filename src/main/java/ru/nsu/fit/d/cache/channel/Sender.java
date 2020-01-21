@@ -27,11 +27,15 @@ public class Sender implements Runnable {
 		this.socket = new DatagramSocket(port);
 	}
 
-	public void initMulticast(String multicastHost, int multicastPort) throws IOException {
-		this.multicastAddress = InetAddress.getByName(multicastHost);
-		this.multicastPort = multicastPort;
-		this.multicastSocket = new MulticastSocket(multicastPort);
-		this.multicastSocket.joinGroup(this.multicastAddress);
+	public void initMulticast(String multicastHost, int multicastPort) {
+		try {
+			this.multicastAddress = InetAddress.getByName(multicastHost);
+			this.multicastSocket = new MulticastSocket(multicastPort);
+			this.multicastPort = multicastPort;
+			this.multicastSocket.joinGroup(this.multicastAddress);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 	}
 
 	@Override

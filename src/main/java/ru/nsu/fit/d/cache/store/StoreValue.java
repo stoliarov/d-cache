@@ -11,5 +11,5 @@ public class StoreValue {
 	
 	private String serializedValue;
 	
-	private long changeId;
+	private Long changeId;
 }

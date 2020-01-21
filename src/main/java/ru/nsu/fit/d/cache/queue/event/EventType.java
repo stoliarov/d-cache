@@ -15,7 +15,7 @@ public enum EventType {
 	/**
 	 * Запрос на запись в локальный store
 	 */
-	WRITE_TO_STORE("write_to_store"),
+	PUT("put"),
 	
 	/**
 	 * К сети подключилась новая нода
@@ -28,9 +28,19 @@ public enum EventType {
 	CONFIRMATION("confirmation"),
 
 	/**
-	 * Получен адрес мультикаста
+	 * Получен адрес мультикаста, нужно на него подписаться
 	 */
-	GOT_MULTICAST("got_multicast");
+	SUBSCRIBE("subscribe"),
+	
+	/**
+	 * Одно из сообщений рассылки стора при инициализации новой ноды
+	 */
+	STORE_SHARING("store_sharing"),
+	
+	/**
+	 * Сигнал ридеру о том, что все сообщения из стора отправлены - дальше можно обновляться только по мультикасту.
+	 */
+	END_OF_STORE("end_of_store");
 	
 	private String name;
 }

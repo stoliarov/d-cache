@@ -1,16 +1,19 @@
 package ru.nsu.fit.d.cache.channel;
 
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.apache.commons.lang3.Validate;
+import ru.nsu.fit.d.cache.queue.event.EventType;
 
 @Data
+@Builder
 @NoArgsConstructor
 @AllArgsConstructor
 public class Message {
 	
-	private MessageType messageType;
+	private EventType eventType;
 
 	private String key;
 	
@@ -22,6 +25,7 @@ public class Message {
 
 	private int multicastPort;
 	
+	// todo можно удалить и просто ориентироваться на тип сообщения
 	private boolean isLowPriorityValue;
 	
 	private String destinationHost;
