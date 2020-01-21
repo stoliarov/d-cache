@@ -215,7 +215,7 @@ public class Node<T> implements Runnable {
 		
 		EventType contextEventType = Optional.of(event)
 				.map(Event::getRequestContext)
-				.map(RequestContext::getMessageType)
+				.map(RequestContext::getEventType)
 				.orElse(null);
 		
 		Address srcAddress = new Address(event.getFromHost(), event.getFromPort());
@@ -310,8 +310,7 @@ public class Node<T> implements Runnable {
 		Long changeId = key == null && store.containsKey(key) ? store.get(key).getChangeId() : event.getChangeId();
 		
 		RequestContext requestContext = new RequestContext();
-		// TODO: 22.01.20 set type
-		//		requestContext.setEventType(event.ge);
+		requestContext.setEventType(event.getEventType());
 		requestContext.setSrcHost(event.getFromHost());
 		requestContext.setSrcPort(event.getFromPort());
 		requestContext.setChangeId(changeId);

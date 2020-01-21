@@ -10,7 +10,7 @@ import ru.nsu.fit.d.cache.queue.event.EventType;
 @AllArgsConstructor
 public class RequestContext {
 	
-	private EventType messageType;
+	private EventType eventType;
 	
 	private Long changeId;
 	
