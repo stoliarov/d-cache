@@ -13,10 +13,8 @@ import ru.nsu.fit.d.cache.queue.message.MessagesToSendQueue;
 import ru.nsu.fit.d.cache.tools.Serializer;
 
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Timer;
-import java.util.TimerTask;
+import java.net.InetAddress;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 @Getter
@@ -83,9 +81,13 @@ public class Node<T> {
 		}
 		//run threads
 		new Thread(sender).start();
-		receiver
-				.getMulticastListener(multicastAddress.getHost(), multicastAddress.getPort())
-				.start();
+
+		if (isWriter()) {
+			receiver
+					.getMulticastListener(multicastAddress.getHost(), multicastAddress.getPort())
+					.start();
+		}
+
 		new Thread(new ConsoleReader(eventQueue))
 				.start();
 
@@ -159,9 +161,20 @@ public class Node<T> {
 	}
 
 	private void handleConfirmation(Event event) {
+		if (isWriter && event.getRequestContext().getMessageType() == MessageType.SUBSCRIBE) {
 
+		}
 		// TODO: 18.01.20 В зависимости от контекста.
 		//  Например, в случае подтверждения подписки начать обход стора и его отправку
+	}
+
+	private void sendStoreToNewNode(Event event) {
+		ArrayList<Message> 
+
+		store.forEach((key, value) ->  messagesToSendQueue.offer(buildPutMessage(key, value.getSerializedValue(), value.getChangeId(), false,
+				new Address(event.getFromHost(), event.getFromPort()))));
+
+
 	}
 
 	private void initBroadcast(String key, String value, long changeId) {
