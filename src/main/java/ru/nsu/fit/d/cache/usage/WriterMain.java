@@ -1,6 +1,6 @@
 package ru.nsu.fit.d.cache.usage;
 
-import ru.nsu.fit.d.cache.store.Node;
+import ru.nsu.fit.d.cache.app.Node;
 
 import java.io.IOException;
 

@@ -1,4 +1,4 @@
-package ru.nsu.fit.d.cache.store;
+package ru.nsu.fit.d.cache.app.model;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
