@@ -14,6 +14,10 @@ public class RequestContext {
 	private Long changeId;
 	
 	private String freeText;
+
+	private String multicastHost;
+
+	private int multicastPort;
 	
 	private String srcUrl;
 }

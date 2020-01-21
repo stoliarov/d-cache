@@ -123,7 +123,20 @@ public class Node<T> {
 				handleConfirmation(event);
 				break;
 			}
+			case GOT_MULTICAST: {
+				handleGotMulticast(event);
+				break;
+			}
 		}
+	}
+
+	@SneakyThrows
+	private void handleGotMulticast(Event event) {
+		if (!isWriter) {
+			sender.initMulticast(event.getRequestContext().getMulticastHost(), event.getRequestContext().getMulticastPort());
+		}
+
+		sendConfirmation(event);
 	}
 
 	private void writeToStore(Event event) {
@@ -141,6 +154,9 @@ public class Node<T> {
 		store.put(key, storeValue);
 
 		if (isWriter()) {
+			if (event.getFromHost() != null) {
+				sendConfirmation(event);
+			}
 			initBroadcast(key, value, changeId);
 		} else {
 			sendToWriter(key, value, changeId);
@@ -158,23 +174,40 @@ public class Node<T> {
 
 		messagesToSendQueue.offer(message);
 		expectForConfirmation(message);
+
+		sendConfirmation(event);
 	}
 
 	private void handleConfirmation(Event event) {
 		if (isWriter && event.getRequestContext().getMessageType() == MessageType.SUBSCRIBE) {
 
 		}
+		else {
+		}
 		// TODO: 18.01.20 В зависимости от контекста.
 		//  Например, в случае подтверждения подписки начать обход стора и его отправку
 	}
 
-	private void sendStoreToNewNode(Event event) {
-		ArrayList<Message> 
+	private void sendConfirmation(Event event) {
+		Message confirmationMessage = buildConfirmationMessage(event);
 
-		store.forEach((key, value) ->  messagesToSendQueue.offer(buildPutMessage(key, value.getSerializedValue(), value.getChangeId(), false,
-				new Address(event.getFromHost(), event.getFromPort()))));
+		messagesToSendQueue.offer(confirmationMessage);
+	}
 
+	private Message buildConfirmationMessage(Event event) {
+		Message confirmationMessage = new Message();
 
+		confirmationMessage.setMessageType(MessageType.CONFIRMATION);
+		confirmationMessage.setDestinationHost(event.getFromHost());
+		confirmationMessage.setDestinationPort(event.getFromPort());
+		confirmationMessage.setSrcHost(srcAddress.host);
+		confirmationMessage.setSrcPort(srcAddress.port);
+
+		if (event.getKey() != null) {
+			confirmationMessage.setChangeId(store.get(event.getKey()).getChangeId());
+		}
+
+		return confirmationMessage;
 	}
 
 	private void initBroadcast(String key, String value, long changeId) {
@@ -222,7 +255,8 @@ public class Node<T> {
 		Message message = new Message();
 
 		message.setMessageType(MessageType.SUBSCRIBE);
-		message.setFreeText(multicastAddress.getHost() + ":" + multicastAddress.getPort());
+		message.setMulticastHost(multicastAddress.getHost());
+		message.setMulticastPort(multicastAddress.getPort());
 		message.setSrcHost(srcAddress.getHost());
 		message.setSrcPort(srcAddress.getPort());
 		message.setDestinationHost(destinationHost);
