@@ -40,7 +40,12 @@ public enum EventType {
 	/**
 	 * Сигнал ридеру о том, что все сообщения из стора отправлены - дальше можно обновляться только по мультикасту.
 	 */
-	END_OF_STORE("end_of_store");
-	
+	END_OF_STORE("end_of_store"),
+
+	/**
+	 * Данные c консоли
+	 */
+	FROM_CONSOLE("from_console");
+
 	private String name;
 }

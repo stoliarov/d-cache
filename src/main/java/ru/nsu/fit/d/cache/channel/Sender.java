@@ -1,5 +1,6 @@
 package ru.nsu.fit.d.cache.channel;
 
+import ru.nsu.fit.d.cache.app.model.Address;
 import ru.nsu.fit.d.cache.tools.Serializer;
 import ru.nsu.fit.d.cache.queue.message.MessagesToSendQueue;
 
@@ -20,10 +21,9 @@ public class Sender implements Runnable {
 
 	private InetAddress multicastAddress;
 
-	public Sender(MessagesToSendQueue messagesToSendQueue) throws IOException {
+	public Sender(MessagesToSendQueue messagesToSendQueue, int port) throws IOException {
 		this.messagesToSendQueue = messagesToSendQueue;
 
-		int port = (int) (Math.random() * (64000 - 5000)) + 5000;
 		this.socket = new DatagramSocket(port);
 	}
 
@@ -40,7 +40,6 @@ public class Sender implements Runnable {
 
 	@Override
 	public void run() {
-		int port = (int) (Math.random() * (64000 - 5000)) + 5000;
 
 		while(true) {
 			try {

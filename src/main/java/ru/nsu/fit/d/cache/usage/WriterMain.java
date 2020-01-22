@@ -11,9 +11,10 @@ public class WriterMain {
 		Node<String> node = null;
 		try {
 			node = new Node<>(
-					1025,
+					9000,
+					9001,
 					"localhost",
-					1025,
+					9001,
 					"224.1.1.1",
 					1026,
 					true

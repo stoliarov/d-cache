@@ -91,8 +91,8 @@ public class Receiver {
 			event.setFromHost(message.getSrcHost());
 			event.setFromPort(message.getSrcPort());
 		} else {
-			event.setFromHost(packet.getAddress().getHostName());
-			event.setFromPort(packet.getPort());
+			event.setFromHost(message.getSrcHost());
+			event.setFromPort(message.getSrcPort());
 		}
 		
 		event.setKey(message.getKey());

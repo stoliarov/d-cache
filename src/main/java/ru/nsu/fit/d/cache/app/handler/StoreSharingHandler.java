@@ -25,7 +25,11 @@ public class StoreSharingHandler extends EventHandler {
 		if (!store.containsKey(key)) {
 			store.put(key, new StoreValue(event.getSerializedValue(), event.getChangeId()));
 		}
-		
+
+		System.out.println("store sharing handler");
+
+		context.getStore().forEach((k, v) -> System.out.println(v.getSerializedValue()));
+
 		senderService.sendConfirmation(context, event);
 	}
 }

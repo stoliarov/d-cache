@@ -13,11 +13,12 @@ public class RearedMain1 {
 		Node<String> node = null;
 		try {
 			node = new Node<>(
-					1027,
+					9002,
+					9003,
 					"localhost",
-					1025,
+					9001,
 					"224.1.1.1",
-					1026,
+					1027,
 					false
 			);
 		} catch (IOException e) {

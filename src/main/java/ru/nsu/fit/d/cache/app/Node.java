@@ -4,6 +4,7 @@ import lombok.Getter;
 import lombok.Setter;
 import ru.nsu.fit.d.cache.app.model.Address;
 import ru.nsu.fit.d.cache.app.model.AppContext;
+import ru.nsu.fit.d.cache.channel.Message;
 import ru.nsu.fit.d.cache.console.ConsoleReader;
 import ru.nsu.fit.d.cache.queue.event.Event;
 import ru.nsu.fit.d.cache.queue.event.EventQueue;
@@ -25,34 +26,32 @@ public class Node<T> implements Runnable {
 	
 	private AppContext context;
 	
-	private EventQueue eventQueue;
-	
 	private Timer confirmationTimer;
 	
-	public Node(int port, String writerHost, int writerPort, String multicastHost, int multicastPort, boolean isWriter)
+	public Node(int senderPort, int receiverPort, String writerHost, int writerPort, String multicastHost, int multicastPort, boolean isWriter)
 			throws IOException {
 		
-		this.context = new AppContext(port, writerHost, writerPort, multicastHost, multicastPort, isWriter);
-		this.eventQueue = new EventQueue();
+		this.context = new AppContext(senderPort, receiverPort, writerHost, writerPort, multicastHost, multicastPort, isWriter);
 	}
 
 	@Override
 	public void run() {
 
-		if (context.isWriter()) {
-			startConfirmationTimeoutChecking();
-			Address multicastAddress = context.getMulticastAddress();
-			context.getReceiver().getMulticastListener(multicastAddress.getHost(), multicastAddress.getPort())
-					.start();
-		}
-		
+		startConfirmationTimeoutChecking();
+
+		context.getReceiver().getPeerToPeerListener().start();
+
 		new Thread(context.getSender()).start();
-		new Thread(new ConsoleReader(eventQueue)).start();
+		new Thread(new ConsoleReader(context.getEventQueue())).start();
+
+		if (!context.isWriter()) {
+			putConnectionMessage();
+		}
 
 		while(true) {
 
 			try {
-				Event event = eventQueue.take();
+				Event event = context.getEventQueue().take();
 				
 				EventType eventType = event.getEventType();
 				
@@ -62,6 +61,18 @@ public class Node<T> implements Runnable {
 				e.printStackTrace();
 			}
 		}
+	}
+
+	private void putConnectionMessage() {
+		Message message = new Message();
+
+		message.setEventType(EventType.NEW_CONNECTION);
+		message.setSrcHost(context.getSrcAddress().getHost());
+		message.setSrcPort(context.getSrcAddress().getPort());
+		message.setDestinationPort(context.getWriterAddress().getPort());
+		message.setDestinationHost(context.getWriterAddress().getHost());
+
+		context.getMessagesToSendQueue().offer(message);
 	}
 
 	private void startConfirmationTimeoutChecking() {

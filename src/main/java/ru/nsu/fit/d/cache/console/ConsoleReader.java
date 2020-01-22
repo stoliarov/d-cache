@@ -29,7 +29,7 @@ public class ConsoleReader implements Runnable {
             value = trimStringIfNeeded(value);
 
             Event event = new Event();
-            event.setEventType(EventType.PUT);
+            event.setEventType(EventType.FROM_CONSOLE);
             event.setKey(key);
             event.setSerializedValue(value);
             eventQueue.add(event);

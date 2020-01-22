@@ -44,7 +44,9 @@ public class NewNodeConnectionHandler extends EventHandler {
 		message.setSrcPort(srcAddress.getPort());
 		message.setDestinationHost(destinationHost);
 		message.setDestinationPort(destinationPort);
-		
+
+		System.out.println("send subscribe");
+
 		return message;
 	}
 }

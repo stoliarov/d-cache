@@ -39,28 +39,32 @@ public class AppContext {
 	private Address srcAddress;
 	
 	private Address multicastAddress;
+
+	private int senderPort;
+
+	private EventQueue eventQueue;
 	
 	// reader проставляет в true после выгрузки стора врайтером
 	private boolean initCompleted;
 	
-	public AppContext(int port, String writerHost, int writerPort,
+	public AppContext(int senderPort, int receiverPort, String writerHost, int writerPort,
 	                  String multicastHost, int multicastPort, boolean isWriter) throws IOException {
 		
-		EventQueue eventQueue = new EventQueue();
+		this.eventQueue = new EventQueue();
 		MessagesToSendQueue messagesToSendQueue = new MessagesToSendQueue();
 		
 		this.messagesToSendQueue = messagesToSendQueue;
-		this.sender = new Sender(messagesToSendQueue);
-		this.receiver = new Receiver(eventQueue, port);
+		this.srcAddress = new Address("localhost", receiverPort);
+		this.receiver = new Receiver(eventQueue, receiverPort);
+		this.sender = new Sender(messagesToSendQueue, senderPort);
 		this.store = new HashMap<>();
 		this.knownNodes = new ConcurrentHashMap<>();
 		this.expectedConfirmation = new ConcurrentHashMap<>();
 		this.activeStoreIterators = new HashMap<>();
-		this.srcAddress = new Address("localhost", port);
 		this.multicastAddress = new Address(multicastHost, multicastPort);
 		this.writerAddress = new Address(writerHost, writerPort);
 		this.isWriter = isWriter;
-		
+
 		if (isWriter) {
 			sender.initMulticast(multicastHost, multicastPort);
 		}

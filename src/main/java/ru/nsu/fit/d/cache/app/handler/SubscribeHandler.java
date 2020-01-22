@@ -32,9 +32,11 @@ public class SubscribeHandler extends EventHandler {
 				.start();
 		
 		context.getSender().initMulticast(
-				event.getRequestContext().getMulticastHost(),
-				event.getRequestContext().getMulticastPort()
+				event.getMulticastHost(),
+				event.getMulticastPort()
 		);
+
+		System.out.println("send confirmation");
 		
 		senderService.sendConfirmation(context, event);
 	}

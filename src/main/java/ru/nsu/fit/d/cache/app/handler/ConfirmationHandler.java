@@ -90,6 +90,8 @@ public class ConfirmationHandler extends EventHandler {
 					.build();
 			
 			senderService.sendMessage(context, message);
+
+			return;
 		}
 		
 		Map.Entry<String, StoreValue> storeEntry = iterator.next();
@@ -106,7 +108,9 @@ public class ConfirmationHandler extends EventHandler {
 				.destinationHost(destinationHost)
 				.destinationPort(destinationPort)
 				.build();
-		
+
+		System.out.println("confirmation handler");
+
 		senderService.sendMessage(context, message);
 	}
 }
