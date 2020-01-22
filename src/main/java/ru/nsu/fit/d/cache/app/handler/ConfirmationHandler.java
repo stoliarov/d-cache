@@ -31,6 +31,8 @@ public class ConfirmationHandler extends EventHandler {
 		
 		Address otherNodeAddress = new Address(event.getFromHost(), event.getFromPort());
 		
+		context.getExpectedConfirmation().remove(otherNodeAddress);
+		
 		boolean isWriter = context.isWriter();
 		
 		if (isWriter && contextEventType == EventType.SUBSCRIBE) {
